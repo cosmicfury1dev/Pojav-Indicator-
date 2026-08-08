@@ -1,42 +1,42 @@
 package com.example.pojavindicator;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.text.Text;
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Formatting;
-
-import java.nio.charset.StandardCharsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PojavIndicatorMod implements ModInitializer {
+    public static final String MOD_ID = "pojav_indicator";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    private static final String POJAV_PREFIX = "📱 [Pojav]";
-    private static final String PC_PREFIX = "💻 [PC]";
+    public record PojavPacket(String data) implements CustomPayload {
+        public static final CustomPayload.Id<PojavPacket> ID = new CustomPayload.Id<>(Identifier.of("pojav", "indicator"));
+        public static final PacketCodec<RegistryByteBuf, PojavPacket> CODEC = PacketCodec.ofStatic(
+            (buf, value) -> buf.writeString(value.data()),
+            buf -> new PojavPacket(buf.readString())
+        );
+
+        @Override
+        public CustomPayload.Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
 
     @Override
     public void onInitialize() {
-        ServerPlayNetworking.registerGlobalReceiver(
-            Identifier.of("minecraft", "brand"),
-            (server, player, handler, buf, responseSender) -> {
-                String brand = buf.readString(StandardCharsets.UTF_8).toLowerCase();
+        LOGGER.info("Pojav Indicator initializing for Minecraft 1.21!");
 
-                server.execute(() -> {
-                    boolean isPojav = brand.contains("pojav") || brand.contains("mojo") || brand.contains("droidbridge");
+        PayloadTypeRegistry.playC2S().register(PojavPacket.ID, PojavPacket.CODEC);
 
-                    Text newDisplayName;
-                    if (isPojav) {
-                        newDisplayName = Text.literal(POJAV_PREFIX + " ")
-                                .formatted(Formatting.GOLD)
-                                .append(player.getName());
-                    } else {
-                        newDisplayName = Text.literal(PC_PREFIX + " ")
-                                .formatted(Formatting.AQUA)
-                                .append(player.getName());
-                    }
-
-                    player.setCustomName(newDisplayName);
-                });
-            }
-        );
+        ServerPlayNetworking.registerGlobalReceiver(PojavPacket.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                LOGGER.info("Received Pojav signal from player: " + context.player().getName().getString());
+            });
+        });
     }
 }
