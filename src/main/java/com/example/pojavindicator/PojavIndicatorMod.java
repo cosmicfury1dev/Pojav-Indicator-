@@ -34,9 +34,7 @@ public class PojavIndicatorMod implements ModInitializer {
         PayloadTypeRegistry.playC2S().register(PojavPacket.ID, PojavPacket.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(PojavPacket.ID, (payload, context) -> {
-            context.server().execute(() -> {
-                LOGGER.info("Received Pojav signal from player: " + context.player().getName().getString());
-            });
+            LOGGER.info("Received Pojav signal from player: " + context.player().getName().getString());
         });
     }
 }
