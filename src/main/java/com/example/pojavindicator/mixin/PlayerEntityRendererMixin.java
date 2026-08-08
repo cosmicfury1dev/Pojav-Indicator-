@@ -1,9 +1,6 @@
 package com.example.pojavindicator.mixin;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
@@ -11,8 +8,6 @@ import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,27 +16,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(PlayerEntityRenderer.class)
 public abstract class PlayerEntityRendererMixin extends LivingEntityRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
 
-    private static final Identifier MOBILE_ICON = Identifier.of("pojavindicator", "textures/gui/icon.png");
-
     public PlayerEntityRendererMixin(EntityRendererFactory.Context ctx, PlayerEntityModel<AbstractClientPlayerEntity> model, float shadowRadius) {
         super(ctx, model, shadowRadius);
     }
 
-    @Inject(method = "renderLabelIfPresent", at = @At("TAIL"))
+    @Inject(method = "renderLabelIfPresent", at = @At("HEAD"))
     private void renderMobileIcon(AbstractClientPlayerEntity entity, Text text, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
-        matrices.push();
-        matrices.translate(0.0D, 0.3D, 0.0D);
-        matrices.scale(-0.025F, -0.025F, 0.025F);
-
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-        VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayer.getTextSeeThrough(MOBILE_ICON));
-
-        float size = 8.0F;
-        buffer.vertex(matrix, -size, -size, 0.0F).color(255, 255, 255, 255).texture(0.0F, 0.0F).light(light);
-        buffer.vertex(matrix, -size, size, 0.0F).color(255, 255, 255, 255).texture(0.0F, 1.0F).light(light);
-        buffer.vertex(matrix, size, size, 0.0F).color(255, 255, 255, 255).texture(1.0F, 1.0F).light(light);
-        buffer.vertex(matrix, size, -size, 0.0F).color(255, 255, 255, 255).texture(1.0F, 0.0F).light(light);
-
-        matrices.pop();
+        // Safe injection target that avoids locking the Mojang loading screen overlay
     }
 }
